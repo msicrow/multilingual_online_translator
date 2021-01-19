@@ -37,22 +37,27 @@ def translate(page_content, to_lang):
         print(sentence)
 
 
-def from_to_phrase():
-    trans_from = languages[int(input("Enter the number of your language you wish to translate from:")) - 1]
-    trans_to = languages[int(input("Enter the number of the language you wish to translate to:")) - 1]
-    phrase = input("Enter the word you wish to translate:")
-    return trans_from, trans_to, phrase
-
-
 def main():
     print("Support for translation to and from the following languages:")
     for i, lang in enumerate(languages):
         print(f"{i + 1}. {lang.title()}")
 
-    fr_lang, to_lang, phrase = from_to_phrase()
+    fr_num = int(input("Enter the number of your language you wish to translate from:"))
+    to_num = int(input("Enter the number of the language you wish to translate to or "
+                       "'0' to translate to all languages:"))
+    phrase = input("Enter the word you wish to translate:")
 
-    page_html = send_and_receive(fr_lang, to_lang, phrase)
-    translate(page_html, to_lang)
+    if to_num == 0:
+        fr_lang = languages[fr_num - 1]
+        del languages[fr_num - 1]  # avoids translating to same lang translating from
+        print(languages)
+        for lang in languages:
+            lang_html = send_and_receive(fr_lang, lang, phrase)
+            translate(lang_html, lang)
+
+    else:
+        page_html = send_and_receive(languages[fr_num - 1], languages[to_num - 1], phrase)
+        translate(page_html, languages[to_num - 1])
 
 
 if __name__ == "__main__":
