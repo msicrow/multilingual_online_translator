@@ -1,52 +1,58 @@
 import requests
 from bs4 import BeautifulSoup
 
+languages = ["arabic", "german", "english", "spanish", "french", "hebrew", "japanese", "dutch", "polish",
+             "portuguese", "romanian", "russian", "turkish"]
 
-def send_and_receive(phrase, trans_to):
-    language = {"en": "french-english", "fr": "english-french"}
-    headers = {"User-Agent": "Mozilla/5.0"}
+
+def send_and_receive(from_lang, to_lang, phrase):
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0"}
     base_url = "https://context.reverso.net/translation/"
-    url = base_url + f"{language[trans_to]}/{phrase}"
+    url = base_url + f"{from_lang}-{to_lang}/{phrase}"
     r = requests.get(url, headers=headers)
-    print(r.status_code, "OK" if r else "Fail")
+    if not r:
+        print(r.status_code)
     return r.content
 
 
-def translate(page_content):
+def translate(page_content, to_lang):
     words = []
     sentences = []
 
     soup = BeautifulSoup(page_content, "html.parser")
 
-    print("\nContext examples:\nTranslations:")
-    word_tags = soup.find_all("a", class_="translation")
+    print(f"\n{to_lang.title()} Translations:")
+    word_tags = soup.select("section#top-results > div#translations-content > a")
     for tag in word_tags:
         words.append(tag.text.strip())
-    for word in words[1:]:
+    for word in words:
         print(word)
 
-    print("\nExamples:")
-    example_tags = soup.find_all("div", class_="ltr")
+    print(f"\n{to_lang.title()} Examples:")
+    example_tags = soup.select("section#examples-content > div > div > span.text")
     for ex_tag in example_tags:
         sentences.append(ex_tag.text.strip())
-    sep_sentences = [j + ":" if not i % 2 else j + "\n" for i, j in enumerate(sentences[2:])]
+    sep_sentences = [j + ":" if not i % 2 else j + "\n" for i, j in enumerate(sentences)]
     for sentence in sep_sentences:
         print(sentence)
 
 
-def languages():
-    trans_from = input("Type the language that are translating from:")
-    trans_to = input("Type the language that you wish to translate to:")
-    return trans_from, trans_to
+def from_to_phrase():
+    trans_from = languages[int(input("Enter the number of your language you wish to translate from:")) - 1]
+    trans_to = languages[int(input("Enter the number of the language you wish to translate to:")) - 1]
+    phrase = input("Enter the word you wish to translate:")
+    return trans_from, trans_to, phrase
 
 
 def main():
-    translate_to = input("Type 'en' if you want to translate from French into English, "
-                         "or 'fr' if you want to translate from English into French:\n")
-    phrase = input("Type the word you want to translate:\n")
-    print(f"You chose '{translate_to}' as the language to translate '{phrase}' to.")
-    page_html = send_and_receive(phrase, translate_to)
-    translate(page_html)
+    print("Support for translation to and from the following languages:")
+    for i, lang in enumerate(languages):
+        print(f"{i + 1}. {lang.title()}")
+
+    fr_lang, to_lang, phrase = from_to_phrase()
+
+    page_html = send_and_receive(fr_lang, to_lang, phrase)
+    translate(page_html, to_lang)
 
 
 if __name__ == "__main__":
