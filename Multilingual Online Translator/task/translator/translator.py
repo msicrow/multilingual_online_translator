@@ -15,26 +15,44 @@ def send_and_receive(from_lang, to_lang, phrase):
     return r.content
 
 
-def translate(page_content, to_lang):
+def translate(page_content, to_lang, phrase):
     words = []
     sentences = []
 
     soup = BeautifulSoup(page_content, "html.parser")
 
-    print(f"\n{to_lang.title()} Translations:")
-    word_tags = soup.select("section#top-results > div#translations-content > a")
-    for tag in word_tags:
-        words.append(tag.text.strip())
-    for word in words:
-        print(word)
+    with open(f"{phrase}.txt", "a", encoding="utf-8") as translation_file:
+        translation_file.write(f"{to_lang.title()} Translations:\n")
+        print(f"{to_lang.title()} Translations:")
+        word_tags = soup.select("section#top-results > div#translations-content > a")
+        for tag in word_tags:
+            words.append(tag.text.strip())
+        for word in words:
+            print(word)
+            translation_file.write(word + "\n")
 
-    print(f"\n{to_lang.title()} Examples:")
-    example_tags = soup.select("section#examples-content > div > div > span.text")
-    for ex_tag in example_tags:
-        sentences.append(ex_tag.text.strip())
-    sep_sentences = [j + ":" if not i % 2 else j + "\n" for i, j in enumerate(sentences)]
-    for sentence in sep_sentences:
-        print(sentence)
+        translation_file.write(f"\n{to_lang.title()} Examples:\n")
+        print(f"\n{to_lang.title()} Examples:")
+        example_tags = soup.select("section#examples-content > div > div > span.text")
+        for ex_tag in example_tags:
+            sentences.append(ex_tag.text.strip())
+        sep_sentences = [j + ":" if not i % 2 else j + "\n" for i, j in enumerate(sentences)]
+        for sentence in sep_sentences:
+            print(sentence)
+            translation_file.write(sentence + "\n")
+
+
+def translation_choice(fr_lang_num, to_lang_num, phrase):
+    if to_lang_num == 0:
+        fr_lang = languages[fr_lang_num - 1]
+        del languages[fr_lang_num - 1]  # avoids translating to same lang translating from
+        for lang in languages:
+            lang_html = send_and_receive(fr_lang, lang, phrase)
+            translate(lang_html, lang, phrase)
+
+    else:
+        page_html = send_and_receive(languages[fr_lang_num - 1], languages[to_lang_num - 1], phrase)
+        translate(page_html, languages[to_lang_num - 1], phrase)
 
 
 def main():
@@ -47,17 +65,7 @@ def main():
                        "'0' to translate to all languages:"))
     phrase = input("Enter the word you wish to translate:")
 
-    if to_num == 0:
-        fr_lang = languages[fr_num - 1]
-        del languages[fr_num - 1]  # avoids translating to same lang translating from
-        print(languages)
-        for lang in languages:
-            lang_html = send_and_receive(fr_lang, lang, phrase)
-            translate(lang_html, lang)
-
-    else:
-        page_html = send_and_receive(languages[fr_num - 1], languages[to_num - 1], phrase)
-        translate(page_html, languages[to_num - 1])
+    translation_choice(fr_num, to_num, phrase)
 
 
 if __name__ == "__main__":
