@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+import argparse
 
 languages = ["arabic", "german", "english", "spanish", "french", "hebrew", "japanese", "dutch", "polish",
              "portuguese", "romanian", "russian", "turkish"]
@@ -42,30 +43,32 @@ def translate(page_content, to_lang, phrase):
             translation_file.write(sentence + "\n")
 
 
-def translation_choice(fr_lang_num, to_lang_num, phrase):
-    if to_lang_num == 0:
-        fr_lang = languages[fr_lang_num - 1]
-        del languages[fr_lang_num - 1]  # avoids translating to same lang translating from
+def translation_choice(fr_lang, to_lang, phrase):
+    if to_lang == "all":
+        languages.remove(fr_lang)  # avoids translating to same lang translating from
         for lang in languages:
             lang_html = send_and_receive(fr_lang, lang, phrase)
             translate(lang_html, lang, phrase)
 
     else:
-        page_html = send_and_receive(languages[fr_lang_num - 1], languages[to_lang_num - 1], phrase)
-        translate(page_html, languages[to_lang_num - 1], phrase)
+        page_html = send_and_receive(fr_lang, to_lang, phrase)
+        translate(page_html, to_lang, phrase)
 
 
 def main():
-    print("Support for translation to and from the following languages:")
-    for i, lang in enumerate(languages):
-        print(f"{i + 1}. {lang.title()}")
+    parser = argparse.ArgumentParser(description="This program translates a phrase from one language to another "
+                                                 "or you can choose to translate to all supported languages.")
+    parser.add_argument("language_from",
+                        choices=languages,
+                        help="Please select one language from the list.")
+    parser.add_argument("language_to",
+                        choices=languages + ["all"],
+                        help="Please select one language from the list or enter 'all' to translate to all languages.")
+    parser.add_argument("phrase",
+                        help="Please enter a word to translate.")
+    args = parser.parse_args()
 
-    fr_num = int(input("Enter the number of your language you wish to translate from:"))
-    to_num = int(input("Enter the number of the language you wish to translate to or "
-                       "'0' to translate to all languages:"))
-    phrase = input("Enter the word you wish to translate:")
-
-    translation_choice(fr_num, to_num, phrase)
+    return translation_choice(args.language_from, args.language_to, args.phrase)
 
 
 if __name__ == "__main__":
