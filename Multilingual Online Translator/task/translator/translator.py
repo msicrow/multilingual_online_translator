@@ -6,6 +6,18 @@ import sys
 languages = ["arabic", "german", "english", "spanish", "french", "hebrew", "japanese", "dutch", "polish",
              "portuguese", "romanian", "russian", "turkish"]
 
+parser = argparse.ArgumentParser(description="This program translates a phrase from one language to another "
+                                             "or you can choose to translate to all supported languages.",
+                                 exit_on_error=False)
+parser.add_argument("language_from",
+                    help="Please select one language from the list.")
+parser.add_argument("language_to",
+                    help="Please select one language from the list or enter 'all' to translate to all languages.")
+parser.add_argument("phrase",
+                    help="Please enter a word to translate.")
+
+args = parser.parse_args()
+
 
 def send_and_receive(from_lang, to_lang, phrase):
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0"}
@@ -50,43 +62,26 @@ def translation_choice(fr_lang, to_lang, phrase):
     if to_lang == "all":
         languages.remove(fr_lang)  # avoids translating to lang translating from
         for lang in languages:
-            try:
-                lang_html = send_and_receive(fr_lang, lang, phrase)
-                translate(lang_html, lang, phrase)
-            except requests.ConnectionError:
-                print("Something wrong with your internet connection")
-                sys.exit()
+            lang_html = send_and_receive(fr_lang, lang, phrase)
+            translate(lang_html, lang, phrase)
 
     else:
-        try:
-            page_html = send_and_receive(fr_lang, to_lang, phrase)
-            translate(page_html, to_lang, phrase)
-        except requests.ConnectionError:
-            print("Something wrong with your internet connection")
-            sys.exit()
+        page_html = send_and_receive(fr_lang, to_lang, phrase)
+        translate(page_html, to_lang, phrase)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="This program translates a phrase from one language to another "
-                                                 "or you can choose to translate to all supported languages.",
-                                     exit_on_error=False)
-    parser.add_argument("language_from",
-                        help="Please select one language from the list.")
-    parser.add_argument("language_to",
-                        help="Please select one language from the list or enter 'all' to translate to all languages.")
-    parser.add_argument("phrase",
-                        help="Please enter a word to translate.")
-
-    args = parser.parse_args()
-
     if args.language_from not in languages:
-        print(f"Sorry the program doesn't support {args.language_from}")
+        print(f"Sorry the program does not support {args.language_from}")
         sys.exit()
     elif args.language_to not in languages + ["all"]:
-        print(f"Sorry the program doesn't support {args.language_to}")
+        print(f"Sorry the program does not support {args.language_to}")
         sys.exit()
-
-    return translation_choice(args.language_from, args.language_to, args.phrase)
+    else:
+        try:
+            return translation_choice(args.language_from, args.language_to, args.phrase)
+        except requests.ConnectionError:
+            print("Please check your connection")
 
 
 if __name__ == "__main__":
